@@ -27,8 +27,8 @@ io.on("connection", (socket) => {
       name: roomName,
       users: [{ userName, socketId: socket.id }],
     });
+    socket.join(recordingId + roomName)
     socket.emit("create-room", data);
-    socket.join(`${recordingId}-${roomName}`);
   });
 
   socket.on("join-room", (data) => {
@@ -38,24 +38,31 @@ io.on("connection", (socket) => {
         room.users.push({ userName, socketId: socket.id });
       }
     }
+    socket.join(recordingId + roomName)
     socket.emit("join-room", data);
-    socket.join(`${recordingId}-${roomName}`);
+  });
+
+  socket.on("send-chat-message", (data) => {
+    const { recordingId, roomName, message } = data;
+    socket.broadcast.to(recordingId + roomName).emit("chat-message", message);
   });
 
   socket.on("video-time-updated", (data) => {
-    const { time, room } = data;
-    socket.to(room).emit("video-time-updated", time);
-    console.log(room, time);
+    const { recordingId, roomName, time } = data;
+    socket.to(recordingId + roomName).emit("video-time-updated", time);
+    console.log(recordingId + roomName, time);
   })
 
-  socket.on("play", (room) => {
-    socket.to(room).emit("play");
-    console.log(`play broadcasted to ${room}`);
+  socket.on("play", (data) => {
+    const { recordingId, roomName } = data;
+    socket.to(recordingId + roomName).emit("play");
+    console.log(`play broadcasted to ${recordingId + roomName}`);
   })
 
-  socket.on("pause", (room) => {
-    socket.to(room).emit("pause");
-    console.log(`pause broadcasted to ${room}`);
+  socket.on("pause", (data) => {
+    const { recordingId, roomName } = data;
+    socket.to(recordingId, roomName).emit("pause");
+    console.log(`pause broadcasted to ${recordingId, roomName}`);
   })
 });
 

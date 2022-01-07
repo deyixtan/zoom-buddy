@@ -4,19 +4,22 @@ let video = null;
 let recordingId = null;
 let roomName = null;
 let userName = null;
-let roomId = null;
 
-const seekHandler = (event) => {
-  socket.emit("video-time-updated", event.target.currentTime, roomId);
-}
+const seekHandler = () => {
+  socket.emit("video-time-updated", {
+    recordingId,
+    roomName,
+    time: event.target.currentTime,
+  });
+};
 
-const playHandler = (event) => {
-  socket.emit("play", roomId);
-}
+const playHandler = () => {
+  socket.emit("play", { recordingId, roomName });
+};
 
-const pauseHandler = (event) => { 
-  socket.emit("pause", roomId);
-}
+const pauseHandler = () => {
+  socket.emit("pause", { recordingId, roomName });
+};
 
 const initSockets = async () => {
   socket = io(SERVER_URL);
@@ -68,31 +71,6 @@ const initSockets = async () => {
     recordingId = x;
     roomName = y;
     userName = z;
-    roomId = `${recordingId} ${roomName}`;
-
-    const roomControlsDiv = document.getElementById("roomControlsDiv");
-    roomControlsDiv.style.display = "none";
-
-    // room info
-    const roomInfo = document.createElement("p");
-    roomInfo.innerText =
-      "Recording ID: " +
-      recordingId +
-      "\nRoom Name: " +
-      roomName +
-      "\nUser Name: " +
-      userName;
-
-    const leftPanel = document.getElementById("leftPanel");
-    leftPanel.append(roomInfo);
-  });
-
-  socket.on("create-room", (data) => {
-    const { recordingId: x, roomName: y, userName: z } = data;
-    recordingId = x;
-    roomName = y;
-    userName = z;
-    roomId = `${recordingId} ${roomName}`;
 
     const roomControlsDiv = document.getElementById("roomControlsDiv");
     roomControlsDiv.style.display = "none";
@@ -105,23 +83,113 @@ const initSockets = async () => {
     const leftPanel = document.getElementById("leftPanel");
     leftPanel.append(roomInfo);
 
+    // chat box
+    const messageContainer = document.createElement("div");
+    messageContainer.id = "messageContainer";
+
+    const messageInput = document.createElement("input");
+    messageInput.id = "messageInput";
+    messageInput.type = "text";
+    messageInput.placeholder = "Enter message";
+
+    const messageSend = document.createElement("button");
+    messageSend.id = "messageSend";
+    messageSend.type = "submit";
+    messageSend.textContent = "Send";
+
+    const messageForm = document.createElement("form");
+    messageForm.id = "messageForm";
+    messageForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const message = messageInput.value;
+      socket.emit("send-chat-message", { recordingId, roomName, message });
+      appendMessage(`${message}`);
+      messageInput.value = "";
+    });
+
+    messageForm.append(messageInput);
+    messageForm.append(messageSend);
+
+    leftPanel.append(messageContainer);
+    leftPanel.append(messageForm);
+  });
+
+  socket.on("create-room", (data) => {
+    const { recordingId: x, roomName: y, userName: z } = data;
+    recordingId = x;
+    roomName = y;
+    userName = z;
+
+    const roomControlsDiv = document.getElementById("roomControlsDiv");
+    roomControlsDiv.style.display = "none";
+
+    // room info
+    const roomInfo = document.createElement("p");
+    roomInfo.innerText =
+      "\nRoom Name: " + roomName + "\nUser Name: " + userName;
+
+    const leftPanel = document.getElementById("leftPanel");
+    leftPanel.append(roomInfo);
+
+    // chat box
+    const messageContainer = document.createElement("div");
+    messageContainer.id = "messageContainer";
+
+    const messageInput = document.createElement("input");
+    messageInput.id = "messageInput";
+    messageInput.type = "text";
+    messageInput.placeholder = "Enter message";
+
+    const messageSend = document.createElement("button");
+    messageSend.id = "messageSend";
+    messageSend.type = "submit";
+    messageSend.textContent = "Send";
+
+    const messageForm = document.createElement("form");
+    messageForm.id = "messageForm";
+    messageForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const message = messageInput.value;
+      socket.emit("send-chat-message", { recordingId, roomName, message });
+      appendMessage(`${message}`);
+      messageInput.value = "";
+    });
+
+    messageForm.append(messageInput);
+    messageForm.append(messageSend);
+
+    leftPanel.append(messageContainer);
+    leftPanel.append(messageForm);
+
     // broadcast new room
     socket.emit("fetch-rooms-broadcast", recordingId);
+  });
+
+  socket.on("chat-message", (message) => {
+    appendMessage(`${message}`);
   });
 
   socket.on("video-time-updated", async (time) => {
     video.removeEventListener("seeked", seekHandler);
     video.currentTime = time;
-  })
+  });
 
   socket.on("play", () => {
     video.play();
-  })
+  });
 
   socket.on("pause", () => {
     video.pause();
-  })
+  });
 };
+
+function appendMessage(message) {
+  const messageElement = document.createElement("div");
+  messageElement.innerText = message;
+
+  const messageContainer = document.getElementById("messageContainer");
+  messageContainer.append(messageElement);
+}
 
 const initRoomControls = async () => {
   // username
@@ -170,13 +238,16 @@ const initRoomControls = async () => {
   const leftPanel = document.getElementsByClassName("player-panel-l")[0];
   leftPanel.id = "leftPanel";
   leftPanel.append(roomControlsDiv);
+  leftPanel.style.display = "flex";
+  leftPanel.style.flexDirection = "column";
+  leftPanel.style.justifyContent = "flex-start";
 };
 
 const initListeners = async () => {
   video.addEventListener("play", playHandler);
   video.addEventListener("pause", pauseHandler);
   video.addEventListener("seeked", seekHandler);
-}
+};
 
 const init = async () => {
   recordingId = window.__data__.recordingId;
