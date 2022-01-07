@@ -27,6 +27,7 @@ io.on("connection", (socket) => {
       name: roomName,
       users: [{ userName, socketId: socket.id }],
     });
+    socket.join(recordingId + roomName)
     socket.emit("create-room", data);
   });
 
@@ -37,7 +38,13 @@ io.on("connection", (socket) => {
         room.users.push({ userName, socketId: socket.id });
       }
     }
+    socket.join(recordingId + roomName)
     socket.emit("join-room", data);
+  });
+
+  socket.on("send-chat-message", (data) => {
+    const { recordingId, roomName, message } = data;
+    socket.broadcast.to(recordingId + roomName).emit("chat-message", message);
   });
 });
 
