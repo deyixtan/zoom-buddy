@@ -1,115 +1,233 @@
 const SERVER_URL = "http://localhost:3000/";
-//const SERVER_URL = "http://e155-138-75-22-3.ngrok.io/" // << if you wanna host it remotely and test
-const ZOOM_REC_URL = "https://nus-sg.zoom.us/rec/play/";
-
 let socket = null;
 let video = null;
+let recordingId = null;
+let roomName = null;
+let userName = null;
 
-// Need to be rewritten
-// ********************************************
-let isPlaying = true;
-
-const test = (event) => {
-  socket.emit("video-time-updated", event.target.currentTime);
-};
-
-// Play video function
-async function playVid() {
-  if (video.paused && !isPlaying) {
-    return video.play();
-  }
-}
-
-// Pause video function
-function pauseVid() {
-  if (!video.paused && isPlaying) {
-    video.pause();
-  }
-}
-
-// *******************************************
-
-const initSocket = async () => {
-  // connect to server
+const initSockets = async () => {
   socket = io(SERVER_URL);
 
-  // set up socket handlers
-  socket.on("new-user", (name) => console.log(name));
-  socket.on("video-time-updated", async (time) => {
-    video.removeEventListener("seeked", test);
-    video.currentTime = time;
-    setTimeout(async () => {
-      video.addEventListener("seeked", test);
-      await playVid();
-    }, 1000);
+  socket.on("fetch-rooms", (rooms) => {
+    const roomListDiv = document.getElementById("roomListDiv");
+    roomListDiv.innerHTML = "";
+
+    for (let room of rooms) {
+      const joinButton = document.createElement("button");
+      joinButton.textContent = "Join " + room.name;
+      joinButton.addEventListener("click", () => {
+        socket.emit("join-room", {
+          recordingId: recordingId,
+          roomName: room.name,
+          userName: usernameInput.value,
+        });
+      });
+
+      const roomDiv = document.createElement("div");
+      roomDiv.append(joinButton);
+      roomListDiv.append(roomDiv);
+    }
   });
+
+  socket.on("fetch-rooms-broadcast", (rooms) => {
+    const roomListDiv = document.getElementById("roomListDiv");
+    roomListDiv.innerHTML = "";
+
+    for (let room of rooms) {
+      const joinButton = document.createElement("button");
+      joinButton.textContent = "Join " + room.name;
+      joinButton.addEventListener("click", () => {
+        socket.emit("join-room", {
+          recordingId: recordingId,
+          roomName: room.name,
+          userName: usernameInput.value,
+        });
+      });
+
+      const roomDiv = document.createElement("div");
+      roomDiv.append(joinButton);
+      roomListDiv.append(roomDiv);
+    }
+  });
+
+  socket.on("join-room", (data) => {
+    const { recordingId: x, roomName: y, userName: z } = data;
+    recordingId = x;
+    roomName = y;
+    userName = z;
+
+    const roomControlsDiv = document.getElementById("roomControlsDiv");
+    roomControlsDiv.style.display = "none";
+
+    // room info
+    const roomInfo = document.createElement("p");
+    roomInfo.innerText =
+      "\nRoom Name: " + roomName + "\nUser Name: " + userName;
+
+    const leftPanel = document.getElementById("leftPanel");
+    leftPanel.append(roomInfo);
+
+    // chat box
+    const messageContainer = document.createElement("div");
+    messageContainer.id = "messageContainer";
+
+    const messageInput = document.createElement("input");
+    messageInput.id = "messageInput";
+    messageInput.type = "text";
+    messageInput.placeholder = "Enter message";
+
+    const messageSend = document.createElement("button");
+    messageSend.id = "messageSend";
+    messageSend.type = "submit";
+    messageSend.textContent = "Send";
+
+    const messageForm = document.createElement("form");
+    messageForm.id = "messageForm";
+    messageForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const message = messageInput.value;
+      socket.emit("send-chat-message", { recordingId, roomName, message });
+      appendMessage(`${message}`);
+      messageInput.value = "";
+    });
+
+    messageForm.append(messageInput);
+    messageForm.append(messageSend);
+
+    leftPanel.append(messageContainer);
+    leftPanel.append(messageForm);
+  });
+
+  socket.on("create-room", (data) => {
+    const { recordingId: x, roomName: y, userName: z } = data;
+    recordingId = x;
+    roomName = y;
+    userName = z;
+
+    const roomControlsDiv = document.getElementById("roomControlsDiv");
+    roomControlsDiv.style.display = "none";
+
+    // room info
+    const roomInfo = document.createElement("p");
+    roomInfo.innerText =
+      "\nRoom Name: " + roomName + "\nUser Name: " + userName;
+
+    const leftPanel = document.getElementById("leftPanel");
+    leftPanel.append(roomInfo);
+
+
+    // chat box
+    const messageContainer = document.createElement("div");
+    messageContainer.id = "messageContainer";
+
+    const messageInput = document.createElement("input");
+    messageInput.id = "messageInput";
+    messageInput.type = "text";
+    messageInput.placeholder = "Enter message";
+
+    const messageSend = document.createElement("button");
+    messageSend.id = "messageSend";
+    messageSend.type = "submit";
+    messageSend.textContent = "Send";
+
+    const messageForm = document.createElement("form");
+    messageForm.id = "messageForm";
+    messageForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const message = messageInput.value;
+      socket.emit("send-chat-message", { recordingId, roomName, message });
+      appendMessage(`${message}`);
+      messageInput.value = "";
+    });
+
+    messageForm.append(messageInput);
+    messageForm.append(messageSend);
+
+    leftPanel.append(messageContainer);
+    leftPanel.append(messageForm);
+
+    // broadcast new room
+    socket.emit("fetch-rooms-broadcast", recordingId);
+  });
+
+  socket.on("chat-message", (message) => {
+    console.log('recevied msg')
+    appendMessage(`${message}`);
+  });
+};
+
+function appendMessage(message) {
+  const messageElement = document.createElement("div");
+  messageElement.innerText = message;
+
+  const messageContainer = document.getElementById("messageContainer");
+  messageContainer.append(messageElement);
+}
+
+const initRoomControls = async () => {
+  // username
+  const usernameInput = document.createElement("input");
+  usernameInput.id = "usernameInput";
+  usernameInput.type = "text";
+  usernameInput.placeholder = "Enter user name";
+
+  const usernameDiv = document.createElement("div");
+  usernameDiv.id = "usernameDiv";
+  usernameDiv.append(usernameInput);
+
+  // room list
+  const roomListDiv = document.createElement("div");
+  roomListDiv.id = "roomListDiv";
+
+  // new room
+  const newRoomTextField = document.createElement("input");
+  newRoomTextField.id = "newRoomTextField";
+  newRoomTextField.type = "text";
+  newRoomTextField.placeholder = "Enter room name";
+
+  const newRoomButton = document.createElement("button");
+  newRoomButton.id = "newRoomButton";
+  newRoomButton.textContent = "New Room";
+  newRoomButton.addEventListener("click", () =>
+    socket.emit("create-room", {
+      recordingId,
+      roomName: newRoomTextField.value,
+      userName: usernameInput.value,
+    })
+  );
+
+  const newRoomDiv = document.createElement("div");
+  newRoomDiv.id = "newRoomDiv";
+  newRoomDiv.append(newRoomTextField);
+  newRoomDiv.append(newRoomButton);
+
+  // add room controls to page
+  const roomControlsDiv = document.createElement("div");
+  roomControlsDiv.id = "roomControlsDiv";
+  roomControlsDiv.append(usernameDiv);
+  roomControlsDiv.append(roomListDiv);
+  roomControlsDiv.append(newRoomDiv);
+
+  const leftPanel = document.getElementsByClassName("player-panel-l")[0];
+  leftPanel.id = "leftPanel";
+  leftPanel.append(roomControlsDiv);
 };
 
 const init = async () => {
-  initSocket();
+  recordingId = window.__data__.recordingId;
 
-  // On video playing toggle values
-  video.onplaying = () => (isPlaying = true);
-  // On video pause toggle values
-  video.onpause = () => (isPlaying = false);
+  initSockets();
+  initRoomControls();
 
-  video.addEventListener("seeked", test);
-
-  // add chatbox
-  const div = document.querySelector(
-    "#app > section > div > div.player-panel-l"
-  );
-
-  const messageContainer = document.createElement("div");
-  messageContainer.id = "message-container";
-  const form = document.createElement("form");
-  form.id = "send-container";
-
-  form.innerHTML =
-    '<input type="text" id="message-input"/>' +
-    '<button type="submit" id="send-btn" style="height:50px">Send</button>';
-  div.append(messageContainer);
-  div.append(form);
-
-  const messageForm = document.getElementById("send-container");
-  const messageInput = document.getElementById("message-input");
-
-  function appendMessage(message) {
-    const messageElement = document.createElement("div");
-    messageElement.innerText = message;
-    messageContainer.append(messageElement);
-  }
-
-  socket.on("chat-message", (data) => {
-    appendMessage(`${data.name}: ${data.message}`);
-  });
-
-  socket.on("new-user", (name) => {
-    appendMessage(`${name} connected`);
-  });
-
-  messageForm.addEventListener("submit", (e) => {
-    e.preventDefault();
-    const message = messageInput.value;
-    socket.emit("send-chat-message", message);
-    messageInput.value = "";
-  });
-
-  // ask for user name and update server
-  const name = prompt("What is your name?");
-  appendMessage("You joined");
-  socket.emit("new-user", name);
-
-  setTimeout(async () => {
-    await playVid();
-  }, 1000);
+  // fetch rooms
+  socket.emit("fetch-rooms", recordingId);
 };
 
-const scriptEntryCheck = () => {
-  if (!location.href.startsWith(ZOOM_REC_URL)) return;
-
+const scriptEntryCheck = async () => {
   video = document.getElementsByTagName("video")[1];
-  if (video === null) return;
+  if (video === null) {
+    return;
+  }
 
   init();
 };
@@ -117,5 +235,3 @@ const scriptEntryCheck = () => {
 (async () => {
   window.addEventListener("load", scriptEntryCheck);
 })();
-
-// https://stackoverflow.com/questions/36803176/how-to-prevent-the-play-request-was-interrupted-by-a-call-to-pause-error
