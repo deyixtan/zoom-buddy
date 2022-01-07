@@ -5,6 +5,22 @@ let recordingId = null;
 let roomName = null;
 let userName = null;
 
+const seekHandler = () => {
+  socket.emit("video-time-updated", {
+    recordingId,
+    roomName,
+    time: event.target.currentTime,
+  });
+};
+
+const playHandler = () => {
+  socket.emit("play", { recordingId, roomName });
+};
+
+const pauseHandler = () => {
+  socket.emit("pause", { recordingId, roomName });
+};
+
 const initSockets = async () => {
   socket = io(SERVER_URL);
 
@@ -150,8 +166,20 @@ const initSockets = async () => {
   });
 
   socket.on("chat-message", (message) => {
-    console.log("recevied msg");
     appendMessage(`${message}`);
+  });
+
+  socket.on("video-time-updated", async (time) => {
+    video.removeEventListener("seeked", seekHandler);
+    video.currentTime = time;
+  });
+
+  socket.on("play", () => {
+    video.play();
+  });
+
+  socket.on("pause", () => {
+    video.pause();
   });
 };
 
@@ -215,11 +243,18 @@ const initRoomControls = async () => {
   leftPanel.style.justifyContent = "flex-start";
 };
 
+const initListeners = async () => {
+  video.addEventListener("play", playHandler);
+  video.addEventListener("pause", pauseHandler);
+  video.addEventListener("seeked", seekHandler);
+};
+
 const init = async () => {
   recordingId = window.__data__.recordingId;
 
   initSockets();
   initRoomControls();
+  initListeners();
 
   // fetch rooms
   socket.emit("fetch-rooms", recordingId);

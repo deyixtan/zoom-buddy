@@ -46,6 +46,24 @@ io.on("connection", (socket) => {
     const { recordingId, roomName, message } = data;
     socket.broadcast.to(recordingId + roomName).emit("chat-message", message);
   });
+  
+  socket.on("video-time-updated", (data) => {
+    const { recordingId, roomName, time } = data;
+    socket.to(recordingId + roomName).emit("video-time-updated", time);
+    console.log(recordingId + roomName, time);
+  })
+
+  socket.on("play", (data) => {
+    const { recordingId, roomName } = data;
+    socket.to(recordingId + roomName).emit("play");
+    console.log(`play broadcasted to ${recordingId + roomName}`);
+  })
+
+  socket.on("pause", (data) => {
+    const { recordingId, roomName } = data;
+    socket.to(recordingId, roomName).emit("pause");
+    console.log(`pause broadcasted to ${recordingId, roomName}`);
+  })
 });
 
 httpServer.listen(3000);
