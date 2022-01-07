@@ -115,7 +115,6 @@ const initSockets = async () => {
     const leftPanel = document.getElementById("leftPanel");
     leftPanel.append(roomInfo);
 
-
     // chat box
     const messageContainer = document.createElement("div");
     messageContainer.id = "messageContainer";
@@ -151,7 +150,7 @@ const initSockets = async () => {
   });
 
   socket.on("chat-message", (message) => {
-    console.log('recevied msg')
+    console.log("recevied msg");
     appendMessage(`${message}`);
   });
 };
@@ -211,6 +210,9 @@ const initRoomControls = async () => {
   const leftPanel = document.getElementsByClassName("player-panel-l")[0];
   leftPanel.id = "leftPanel";
   leftPanel.append(roomControlsDiv);
+  leftPanel.style.display = "flex";
+  leftPanel.style.flexDirection = "column";
+  leftPanel.style.justifyContent = "flex-start";
 };
 
 const init = async () => {
