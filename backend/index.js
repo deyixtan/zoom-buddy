@@ -1,14 +1,27 @@
-import { createServer } from "http";
-import { Server } from "socket.io";
-
-const httpServer = createServer();
-const io = new Server(httpServer, { cors: { origin: "*" } });
-
-io.on("connection", (socket) => {
-  socket.on("test", (test) => {
-    console.log(test);
-    socket.broadcast.emit("test", "Server: Hello World");
-  });
+const io = require("socket.io")(3000, {
+  cors: {
+    origin: "*",
+  },
 });
 
-httpServer.listen(3000);
+const users = {};
+
+io.on("connection", (socket) => {
+  socket.on("new-user", (name) => {
+    users[socket.id] = name;
+    socket.broadcast.emit("new-user", name);
+    console.log(name);
+  });
+
+  socket.on("video-time-updated", (time) => {
+    socket.broadcast.emit("video-time-updated", time);
+    console.log(time);
+  });
+
+  socket.on("send-chat-message", (message) => {
+    socket.broadcast.emit("chat-message", {
+      message: message,
+      name: users[socket.id],
+    });
+  });
+});
