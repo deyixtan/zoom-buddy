@@ -28,6 +28,7 @@ io.on("connection", (socket) => {
       users: [{ userName, socketId: socket.id }],
     });
     socket.emit("create-room", data);
+    socket.join(`${recordingId}-${roomName}`);
   });
 
   socket.on("join-room", (data) => {
@@ -38,7 +39,24 @@ io.on("connection", (socket) => {
       }
     }
     socket.emit("join-room", data);
+    socket.join(`${recordingId}-${roomName}`);
   });
+
+  socket.on("video-time-updated", (data) => {
+    const { time, room } = data;
+    socket.to(room).emit("video-time-updated", time);
+    console.log(room, time);
+  })
+
+  socket.on("play", (room) => {
+    socket.to(room).emit("play");
+    console.log(`play broadcasted to ${room}`);
+  })
+
+  socket.on("pause", (room) => {
+    socket.to(room).emit("pause");
+    console.log(`pause broadcasted to ${room}`);
+  })
 });
 
 httpServer.listen(3000);

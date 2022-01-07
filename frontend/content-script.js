@@ -4,6 +4,19 @@ let video = null;
 let recordingId = null;
 let roomName = null;
 let userName = null;
+let roomId = null;
+
+const seekHandler = (event) => {
+  socket.emit("video-time-updated", event.target.currentTime, roomId);
+}
+
+const playHandler = (event) => {
+  socket.emit("play", roomId);
+}
+
+const pauseHandler = (event) => { 
+  socket.emit("pause", roomId);
+}
 
 const initSockets = async () => {
   socket = io(SERVER_URL);
@@ -55,6 +68,7 @@ const initSockets = async () => {
     recordingId = x;
     roomName = y;
     userName = z;
+    roomId = `${recordingId} ${roomName}`;
 
     const roomControlsDiv = document.getElementById("roomControlsDiv");
     roomControlsDiv.style.display = "none";
@@ -78,6 +92,7 @@ const initSockets = async () => {
     recordingId = x;
     roomName = y;
     userName = z;
+    roomId = `${recordingId} ${roomName}`;
 
     const roomControlsDiv = document.getElementById("roomControlsDiv");
     roomControlsDiv.style.display = "none";
@@ -93,6 +108,19 @@ const initSockets = async () => {
     // broadcast new room
     socket.emit("fetch-rooms-broadcast", recordingId);
   });
+
+  socket.on("video-time-updated", async (time) => {
+    video.removeEventListener("seeked", seekHandler);
+    video.currentTime = time;
+  })
+
+  socket.on("play", () => {
+    video.play();
+  })
+
+  socket.on("pause", () => {
+    video.pause();
+  })
 };
 
 const initRoomControls = async () => {
@@ -144,11 +172,18 @@ const initRoomControls = async () => {
   leftPanel.append(roomControlsDiv);
 };
 
+const initListeners = async () => {
+  video.addEventListener("play", playHandler);
+  video.addEventListener("pause", pauseHandler);
+  video.addEventListener("seeked", seekHandler);
+}
+
 const init = async () => {
   recordingId = window.__data__.recordingId;
 
   initSockets();
   initRoomControls();
+  initListeners();
 
   // fetch rooms
   socket.emit("fetch-rooms", recordingId);
