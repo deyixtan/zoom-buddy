@@ -1,0 +1,14 @@
+{
+  "name": "Zoom Buddy",
+  "description": "",
+  "version": "1.0.0",
+  "manifest_version": 2,
+  "content_scripts": [
+    {
+      "matches": ["https://nus-sg.zoom.us/rec/play/*"],
+      "js": ["socket.io.min.js", "content-script.js"],
+      "run_at": "document_end"
+    }
+  ],
+  "permissions": ["tabs"]
+}
