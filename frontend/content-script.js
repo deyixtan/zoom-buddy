@@ -10,7 +10,7 @@ const initSockets = async () => {
 
   socket.on("fetch-rooms", (rooms) => {
     const roomListDiv = document.getElementById("roomListDiv");
-    roomListDiv.innerHTML = '';
+    roomListDiv.innerHTML = "";
 
     for (let room of rooms) {
       const joinButton = document.createElement("button");
@@ -31,7 +31,7 @@ const initSockets = async () => {
 
   socket.on("fetch-rooms-broadcast", (rooms) => {
     const roomListDiv = document.getElementById("roomListDiv");
-    roomListDiv.innerHTML = '';
+    roomListDiv.innerHTML = "";
 
     for (let room of rooms) {
       const joinButton = document.createElement("button");
@@ -58,6 +58,19 @@ const initSockets = async () => {
 
     const roomControlsDiv = document.getElementById("roomControlsDiv");
     roomControlsDiv.style.display = "none";
+
+    // room info
+    const roomInfo = document.createElement("p");
+    roomInfo.innerText =
+      "Recording ID: " +
+      recordingId +
+      "\nRoom Name: " +
+      roomName +
+      "\nUser Name: " +
+      userName;
+
+    const leftPanel = document.getElementById("leftPanel");
+    leftPanel.append(roomInfo);
   });
 
   socket.on("create-room", (data) => {
@@ -68,6 +81,16 @@ const initSockets = async () => {
 
     const roomControlsDiv = document.getElementById("roomControlsDiv");
     roomControlsDiv.style.display = "none";
+
+    // room info
+    const roomInfo = document.createElement("p");
+    roomInfo.innerText =
+      "\nRoom Name: " + roomName + "\nUser Name: " + userName;
+
+    const leftPanel = document.getElementById("leftPanel");
+    leftPanel.append(roomInfo);
+
+    // broadcast new room
     socket.emit("fetch-rooms-broadcast", recordingId);
   });
 };
@@ -75,24 +98,26 @@ const initSockets = async () => {
 const initRoomControls = async () => {
   // username
   const usernameInput = document.createElement("input");
-  usernameInput.id = 'usernameInput';
+  usernameInput.id = "usernameInput";
   usernameInput.type = "text";
+  usernameInput.placeholder = "Enter user name";
 
   const usernameDiv = document.createElement("div");
-  usernameDiv.id = 'usernameDiv';
+  usernameDiv.id = "usernameDiv";
   usernameDiv.append(usernameInput);
 
   // room list
   const roomListDiv = document.createElement("div");
-  roomListDiv.id = 'roomListDiv';
+  roomListDiv.id = "roomListDiv";
 
   // new room
   const newRoomTextField = document.createElement("input");
-  newRoomTextField.id = 'newRoomTextField';
+  newRoomTextField.id = "newRoomTextField";
   newRoomTextField.type = "text";
+  newRoomTextField.placeholder = "Enter room name";
 
   const newRoomButton = document.createElement("button");
-  newRoomButton.id = 'newRoomButton';
+  newRoomButton.id = "newRoomButton";
   newRoomButton.textContent = "New Room";
   newRoomButton.addEventListener("click", () =>
     socket.emit("create-room", {
@@ -103,18 +128,19 @@ const initRoomControls = async () => {
   );
 
   const newRoomDiv = document.createElement("div");
-  newRoomDiv.id = 'newRoomDiv';
+  newRoomDiv.id = "newRoomDiv";
   newRoomDiv.append(newRoomTextField);
   newRoomDiv.append(newRoomButton);
 
   // add room controls to page
   const roomControlsDiv = document.createElement("div");
-  roomControlsDiv.id = 'roomControlsDiv';
+  roomControlsDiv.id = "roomControlsDiv";
+  roomControlsDiv.append(usernameDiv);
   roomControlsDiv.append(roomListDiv);
   roomControlsDiv.append(newRoomDiv);
 
   const leftPanel = document.getElementsByClassName("player-panel-l")[0];
-  leftPanel.id = 'leftPanel';
+  leftPanel.id = "leftPanel";
   leftPanel.append(roomControlsDiv);
 };
 
