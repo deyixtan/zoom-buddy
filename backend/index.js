@@ -46,7 +46,7 @@ io.on("connection", (socket) => {
     const { recordingId, roomName, message } = data;
     socket.broadcast.to(recordingId + roomName).emit("chat-message", message);
   });
-
+  
   socket.on("video-time-updated", (data) => {
     const { recordingId, roomName, time } = data;
     socket.to(recordingId + roomName).emit("video-time-updated", time);
