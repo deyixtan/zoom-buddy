@@ -5,7 +5,7 @@ let recordingId = null;
 let roomName = null;
 let userName = null;
 
-const seekHandler = () => {
+const seekHandler = (event) => {
   socket.emit("video-time-updated", {
     recordingId,
     roomName,
@@ -13,12 +13,52 @@ const seekHandler = () => {
   });
 };
 
-const playHandler = () => {
+const playHandler = (event) => {
   socket.emit("play", { recordingId, roomName });
 };
 
-const pauseHandler = () => {
+const pauseHandler = (event) => {
   socket.emit("pause", { recordingId, roomName });
+};
+
+const setUpChatBox = async () => {
+  // chat box
+  const messageContainer = document.createElement("ul");
+  messageContainer.id = "messageContainer";
+  messageContainer.classList.add("list-group");
+  messageContainer.style.minHeight = "20%";
+  messageContainer.style.maxHeight = "20%";
+  messageContainer.style.overflow = "scroll";
+
+  const messageInput = document.createElement("input");
+  messageInput.id = "messageInput";
+  messageInput.classList.add("form-control");
+  messageInput.type = "text";
+  messageInput.placeholder = "Enter message";
+
+  const messageSend = document.createElement("button");
+  messageSend.id = "messageSend";
+  messageSend.classList.add("btn", "btn-dark", "form-control");
+  messageSend.type = "submit";
+  messageSend.textContent = "Send";
+
+  const messageForm = document.createElement("form");
+  messageForm.id = "messageForm";
+  messageForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const message = messageInput.value;
+    if (message === "") return;
+    socket.emit("send-chat-message", { recordingId, roomName, message });
+    appendMessage(userName, message);
+    messageInput.value = "";
+  });
+
+  messageForm.append(messageInput);
+  messageForm.append(messageSend);
+
+  const leftPanel = document.getElementById("leftPanel");
+  leftPanel.append(messageContainer);
+  leftPanel.append(messageForm);
 };
 
 const initSockets = async () => {
@@ -93,41 +133,7 @@ const initSockets = async () => {
     leftPanel.append(roomInfo);
 
     // chat box
-    const messageContainer = document.createElement("ul");
-    messageContainer.id = "messageContainer";
-    messageContainer.classList.add("list-group");
-    messageContainer.style.minHeight = "20%";
-    messageContainer.style.maxHeight = "20%";
-    messageContainer.style.overflow = "scroll";
-
-    const messageInput = document.createElement("input");
-    messageInput.id = "messageInput";
-    messageInput.classList.add("form-control");
-    messageInput.type = "text";
-    messageInput.placeholder = "Enter message";
-
-    const messageSend = document.createElement("button");
-    messageSend.id = "messageSend";
-    messageSend.classList.add("btn", "btn-dark", "form-control");
-    messageSend.type = "submit";
-    messageSend.textContent = "Send";
-
-    const messageForm = document.createElement("form");
-    messageForm.id = "messageForm";
-    messageForm.addEventListener("submit", (event) => {
-      event.preventDefault();
-      const message = messageInput.value;
-      if (message === "") return;
-      socket.emit("send-chat-message", { recordingId, roomName, message });
-      appendMessage(userName, message);
-      messageInput.value = "";
-    });
-
-    messageForm.append(messageInput);
-    messageForm.append(messageSend);
-
-    leftPanel.append(messageContainer);
-    leftPanel.append(messageForm);
+    setUpChatBox();
   });
 
   socket.on("create-room", (data) => {
@@ -151,41 +157,7 @@ const initSockets = async () => {
     leftPanel.append(roomInfo);
 
     // chat box
-    const messageContainer = document.createElement("ul");
-    messageContainer.id = "messageContainer";
-    messageContainer.classList.add("list-group");
-    messageContainer.style.minHeight = "20%";
-    messageContainer.style.maxHeight = "20%";
-    messageContainer.style.overflow = "scroll";
-
-    const messageInput = document.createElement("input");
-    messageInput.id = "messageInput";
-    messageInput.classList.add("form-control");
-    messageInput.type = "text";
-    messageInput.placeholder = "Enter message";
-
-    const messageSend = document.createElement("button");
-    messageSend.id = "messageSend";
-    messageSend.classList.add("btn", "btn-dark", "form-control");
-    messageSend.type = "submit";
-    messageSend.textContent = "Send";
-
-    const messageForm = document.createElement("form");
-    messageForm.id = "messageForm";
-    messageForm.addEventListener("submit", (event) => {
-      event.preventDefault();
-      const message = messageInput.value;
-      if (message === "") return;
-      socket.emit("send-chat-message", { recordingId, roomName, message });
-      appendMessage(userName, message);
-      messageInput.value = "";
-    });
-
-    messageForm.append(messageInput);
-    messageForm.append(messageSend);
-
-    leftPanel.append(messageContainer);
-    leftPanel.append(messageForm);
+    setUpChatBox();
 
     // broadcast new room
     socket.emit("fetch-rooms-broadcast", recordingId);
