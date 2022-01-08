@@ -13,6 +13,7 @@
     {
       "matches": ["https://nus-sg.zoom.us/rec/play/*"],
       "js": ["inject.js"],
+      "css": ["bootstrap.min.css"],
       "run_at": "document_end"
     }
   ],
