@@ -54,6 +54,7 @@ const initSockets = async () => {
 
     for (let room of rooms) {
       const joinButton = document.createElement("button");
+      joinButton.classList.add("btn", "btn-success", "form-control");
       joinButton.textContent = "Join " + room.name;
       joinButton.addEventListener("click", () => {
         socket.emit("join-room", {
@@ -118,7 +119,7 @@ const initSockets = async () => {
       const message = messageInput.value;
       if (message === "") return;
       socket.emit("send-chat-message", { recordingId, roomName, message });
-      appendMessage(`${message}`);
+      appendMessage(userName, message);
       messageInput.value = "";
     });
 
@@ -176,7 +177,7 @@ const initSockets = async () => {
       const message = messageInput.value;
       if (message === "") return;
       socket.emit("send-chat-message", { recordingId, roomName, message });
-      appendMessage(`${message}`);
+      appendMessage(userName, message);
       messageInput.value = "";
     });
 
@@ -190,8 +191,9 @@ const initSockets = async () => {
     socket.emit("fetch-rooms-broadcast", recordingId);
   });
 
-  socket.on("chat-message", (message) => {
-    appendMessage(`${message}`);
+  socket.on("chat-message", (data) => {
+    const { username, message } = data;
+    appendMessage(username, message);
   });
 
   socket.on("video-time-updated", async (time) => {
@@ -208,12 +210,12 @@ const initSockets = async () => {
   });
 };
 
-function appendMessage(message) {
+function appendMessage(username, message) {
   const time = new Date().toLocaleTimeString();
 
   const messageElement = document.createElement("li");
   messageElement.classList.add("list-group-item");
-  messageElement.textContent = "[" + time + "]: " + message;
+  messageElement.textContent = "[" + time + "] " + username + ": " + message;
 
   const messageContainer = document.getElementById("messageContainer");
   messageContainer.append(messageElement);
@@ -271,10 +273,10 @@ const initRoomControls = async () => {
 
   const leftPanel = document.getElementsByClassName("player-panel-l")[0];
   leftPanel.id = "leftPanel";
-  leftPanel.append(roomControlsDiv);
   leftPanel.style.display = "flex";
   leftPanel.style.flexDirection = "column";
   leftPanel.style.justifyContent = "flex-start";
+  leftPanel.append(roomControlsDiv);
 };
 
 const initListeners = async () => {

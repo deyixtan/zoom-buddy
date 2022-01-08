@@ -27,7 +27,7 @@ io.on("connection", (socket) => {
       name: roomName,
       users: [{ userName, socketId: socket.id }],
     });
-    socket.join(recordingId + roomName)
+    socket.join(recordingId + roomName);
     socket.emit("create-room", data);
   });
 
@@ -38,32 +38,41 @@ io.on("connection", (socket) => {
         room.users.push({ userName, socketId: socket.id });
       }
     }
-    socket.join(recordingId + roomName)
+    socket.join(recordingId + roomName);
     socket.emit("join-room", data);
   });
 
   socket.on("send-chat-message", (data) => {
     const { recordingId, roomName, message } = data;
-    socket.broadcast.to(recordingId + roomName).emit("chat-message", message);
+    for (let room of recordings[recordingId]) {
+      if (room.name === roomName) {
+        for (let user of room.users) {
+          if (user.socketId == socket.id)
+            socket.broadcast
+              .to(recordingId + roomName)
+              .emit("chat-message", { username: user.userName, message });
+        }
+      }
+    }
   });
-  
+
   socket.on("video-time-updated", (data) => {
     const { recordingId, roomName, time } = data;
     socket.to(recordingId + roomName).emit("video-time-updated", time);
     console.log(recordingId + roomName, time);
-  })
+  });
 
   socket.on("play", (data) => {
     const { recordingId, roomName } = data;
     socket.to(recordingId + roomName).emit("play");
     console.log(`play broadcasted to ${recordingId + roomName}`);
-  })
+  });
 
   socket.on("pause", (data) => {
     const { recordingId, roomName } = data;
     socket.to(recordingId, roomName).emit("pause");
-    console.log(`pause broadcasted to ${recordingId, roomName}`);
-  })
+    console.log(`pause broadcasted to ${(recordingId, roomName)}`);
+  });
 });
 
 httpServer.listen(3000);
