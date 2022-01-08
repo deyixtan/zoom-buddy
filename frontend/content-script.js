@@ -174,11 +174,15 @@ const initSockets = async () => {
   });
 
   socket.on("play", () => {
-    video.play();
+    if (video.networkState == 1) {
+      video.play();
+    }
   });
 
   socket.on("pause", () => {
-    video.pause();
+    if (video.networkState == 1) {
+      video.pause();
+    }
   });
 };
 
