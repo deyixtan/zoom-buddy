@@ -70,7 +70,7 @@ io.on("connection", (socket) => {
 
   socket.on("pause", (data) => {
     const { recordingId, roomName } = data;
-    socket.to(recordingId, roomName).emit("pause");
+    socket.to(recordingId + roomName).emit("pause");
     console.log(`pause broadcasted to ${(recordingId, roomName)}`);
   });
 });
