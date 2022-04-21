@@ -136,33 +136,6 @@ const initSockets = async () => {
     setUpChatBox();
   });
 
-  socket.on("create-room", (data) => {
-    const { recordingId: x, roomName: y, userName: z } = data;
-    recordingId = x;
-    roomName = y;
-    userName = z;
-
-    const roomControlsDiv = document.getElementById("roomControlsDiv");
-    roomControlsDiv.style.display = "none";
-
-    // room info
-    const roomInfo = document.createElement("p");
-    roomInfo.innerHTML =
-      "\n<strong>Room Name</strong>: " +
-      roomName +
-      "\t<strong>User Name</strong>: " +
-      userName;
-
-    const leftPanel = document.getElementById("leftPanel");
-    leftPanel.append(roomInfo);
-
-    // chat box
-    setUpChatBox();
-
-    // broadcast new room
-    socket.emit("fetch-rooms-broadcast", recordingId);
-  });
-
   socket.on("chat-message", (data) => {
     const { username, message } = data;
     appendMessage(username, message);
@@ -198,62 +171,6 @@ function appendMessage(username, message) {
   messageContainer.scrollTop = messageContainer.scrollHeight; // scroll to end of list
 }
 
-const initRoomControls = async () => {
-  // username
-  const usernameInput = document.createElement("input");
-  usernameInput.id = "usernameInput";
-  usernameInput.classList.add("form-control");
-  usernameInput.type = "text";
-  usernameInput.placeholder = "Enter user name";
-  usernameInput.style.marginBottom = "50px";
-
-  const usernameDiv = document.createElement("div");
-  usernameDiv.id = "usernameDiv";
-  usernameDiv.append(usernameInput);
-
-  // room list
-  const roomListUl = document.createElement("ul");
-  roomListUl.id = "roomListUl";
-  roomListUl.classList.add("list-group");
-
-  // new room
-  const newRoomTextField = document.createElement("input");
-  newRoomTextField.id = "newRoomTextField";
-  newRoomTextField.classList.add("form-control");
-  newRoomTextField.type = "text";
-  newRoomTextField.placeholder = "Enter room name";
-
-  const newRoomButton = document.createElement("button");
-  newRoomButton.id = "newRoomButton";
-  newRoomButton.classList.add("btn", "btn-dark", "form-control");
-  newRoomButton.textContent = "New Room";
-  newRoomButton.addEventListener("click", () =>
-    socket.emit("create-room", {
-      recordingId,
-      roomName: newRoomTextField.value,
-      userName: usernameInput.value,
-    })
-  );
-
-  const newRoomDiv = document.createElement("div");
-  newRoomDiv.id = "newRoomDiv";
-  newRoomDiv.append(newRoomTextField);
-  newRoomDiv.append(newRoomButton);
-
-  // add room controls to page
-  const roomControlsDiv = document.createElement("div");
-  roomControlsDiv.id = "roomControlsDiv";
-  roomControlsDiv.append(usernameDiv);
-  roomControlsDiv.append(roomListUl);
-  roomControlsDiv.append(newRoomDiv);
-
-  const leftPanel = document.getElementsByClassName("player-panel-l")[0];
-  leftPanel.id = "leftPanel";
-  leftPanel.style.display = "flex";
-  leftPanel.style.flexDirection = "column";
-  leftPanel.style.justifyContent = "flex-start";
-  leftPanel.append(roomControlsDiv);
-};
 
 const initListeners = async () => {
   video.addEventListener("play", playHandler);

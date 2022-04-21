@@ -4,10 +4,10 @@
   "version": "1.1.0",
   "manifest_version": 2,
   "icons": {
-    "16": "img/16.png",
-    "32": "img/32.png",
-    "48": "img/48.png",
-    "128": "img/128.png"
+    "16": "resources/img/16.png",
+    "32": "resources/img/32.png",
+    "48": "resources/img/48.png",
+    "128": "resources/img/128.png"
   },
   "content_scripts": [
     {
@@ -17,8 +17,10 @@
     }
   ],
   "web_accessible_resources": [
-    "bootstrap.min.css",
-    "socket.io.min.js",
-    "content-script.js"
+    "resources/css/bootstrap.min.css",
+    "resources/js/socket.io.min.js",
+    "components/player.js",
+    "components/room-controls.js",
+    "main.js"
   ]
 }

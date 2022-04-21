@@ -4,14 +4,46 @@ import { Server } from "socket.io";
 const httpServer = createServer();
 const io = new Server(httpServer, { cors: { origin: "*" } });
 
-const recordings = {};
+const rooms = {};
 
 io.on("connection", (socket) => {
-  socket.on("fetch-rooms", (recordingId) => {
-    if (!(recordingId in recordings)) {
-      recordings[recordingId] = [];
+  // video player
+  socket.on("player.play", ({ roomId }) => {
+    socket.broadcast.to(roomId).emit("player.play");
+  });
+
+  socket.on("player.pause", ({ roomId }) => {
+    socket.broadcast.to(roomId).emit("player.pause");
+  });
+
+  socket.on("player.seekTo", ({ roomId, time }) => {
+    const data = { time: time };
+    socket.broadcast.to(roomId).emit("player.seekTo", data);
+  });
+
+  // room controls
+  socket.on("room-controls-fetch-rooms", ({ recordingId }) => {
+    const tmpRooms = [];
+
+    for (const roomId in rooms) {
+      const tmpRecordingId = roomId.split(";")[0];
+      if (tmpRecordingId === recordingId) {
+        const tempName = rooms[roomId].name;
+        tmpRooms.push(tempName);
+      }
     }
-    socket.emit("fetch-rooms", recordings[recordingId]);
+
+    const data = { rooms: tmpRooms };
+    socket.emit("room-controls-fetch-rooms", data);
+  });
+
+  socket.on("room-controls-new-room", ({ roomId, roomName, userName }) => {
+    rooms[roomId] = { name: roomName, users: {} };
+    rooms[roomId].users[socket.id] = userName;
+
+    const data = { roomName: roomName };
+    socket.join(roomId);
+    socket.broadcast.to(roomId).emit("room-controls-new-room", data);
   });
 
   socket.on("fetch-rooms-broadcast", (recordingId) => {
@@ -19,16 +51,6 @@ io.on("connection", (socket) => {
       recordings[recordingId] = [];
     }
     socket.broadcast.emit("fetch-rooms-broadcast", recordings[recordingId]);
-  });
-
-  socket.on("create-room", (data) => {
-    const { recordingId, roomName, userName } = data;
-    recordings[recordingId].push({
-      name: roomName,
-      users: [{ userName, socketId: socket.id }],
-    });
-    socket.join(recordingId + roomName);
-    socket.emit("create-room", data);
   });
 
   socket.on("join-room", (data) => {
